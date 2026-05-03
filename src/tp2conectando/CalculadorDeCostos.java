@@ -1,28 +1,29 @@
 package tp2conectando;
 
+import tp2conectando.Localidad;
+
 public class CalculadorDeCostos {
-
-    private double costoPorKm;
+    private double costoKm;
     private double porcentajeExtra;
-    private double costoFijoEntreProvincias;
+    private double costoProvincia;
 
-    public CalculadorDeCostos(double costoPorKm, double porcentajeExtra, double costoFijoEntreProvincias) {
-        this.costoPorKm = costoPorKm;
+    public CalculadorDeCostos(double costoKm, double porcentajeExtra, double costoProvincia) {
+        this.costoKm = costoKm;
         this.porcentajeExtra = porcentajeExtra;
-        this.costoFijoEntreProvincias = costoFijoEntreProvincias;
+        this.costoProvincia = costoProvincia;
     }
 
-    public double calcularCosto(Localidad a, Localidad b) {
-        double distancia = a.calcularDistancia(b);
-
-        double costo = distancia * costoPorKm;
+    public double calcular(Localidad a, Localidad b) {
+        double distancia = a.distancia(b);
+        double costo = distancia * costoKm;
 
         if (distancia > 300) {
             costo += costo * (porcentajeExtra / 100);
         }
-
-        if (!a.getProvincia().equals(b.getProvincia())) {
-            costo += costoFijoEntreProvincias;
+        
+        // Se ignoran mayúsculas/minúsculas para evitar errores de tipeo
+        if (!a.getProvincia().equalsIgnoreCase(b.getProvincia())) {
+            costo += costoProvincia;
         }
 
         return costo;

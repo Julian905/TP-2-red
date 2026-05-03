@@ -11,20 +11,12 @@ public class Conexion implements Comparable<Conexion> {
         this.costo = costo;
     }
 
-    public Localidad getOrigen() {
-        return origen;
-    }
-
-    public Localidad getDestino() {
-        return destino;
-    }
-
-    public double getCosto() {
-        return costo;
-    }
+    public Localidad getOrigen() { return origen; }
+    public Localidad getDestino() { return destino; }
+    public double getCosto() { return costo; }
 
     @Override
-    public int compareTo(Conexion otra) {
-        return Double.compare(this.costo, otra.costo);
+    public int compareTo(Conexion o) {
+        return Double.compare(this.costo, o.costo);
     }
 }

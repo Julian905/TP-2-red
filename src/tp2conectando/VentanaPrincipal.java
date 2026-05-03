@@ -1,140 +1,113 @@
 package tp2conectando;
 
+import tp2conectando.Conexion;
+import tp2conectando.Localidad;
+import tp2conectando.CalculadorDeCostos;
+import tp2conectando.Planificador;
+
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.List;
 
 public class VentanaPrincipal extends JFrame {
+    private List<Localidad> localidades = new ArrayList<>();
+    private JTextArea salida = new JTextArea(15, 50);
 
-    private ArrayList<Localidad> localidades = new ArrayList<>();
-
-    private JTextField campoNombre;
-    private JTextField campoProvincia;
-    private JTextField campoLatitud;
-    private JTextField campoLongitud;
-
-    private JTextArea areaSalida;
+    private JTextField txtNombre = new JTextField(10), txtProv = new JTextField(10);
+    private JTextField txtLat = new JTextField(6), txtLon = new JTextField(6);
+    
+    private JTextField txtCostoKm = new JTextField("10", 5);
+    private JTextField txtPorcentaje = new JTextField("20", 5);
+    private JTextField txtCostoProv = new JTextField("5000", 5);
 
     public VentanaPrincipal() {
-        setTitle("Conexión de Localidades");
-        setSize(900, 400);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new FlowLayout());
+        super("Planificador de Conexiones - TP 2");
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
 
+        JPanel panelInputs = new JPanel(new GridLayout(0, 4, 5, 5));
+        panelInputs.setBorder(BorderFactory.createTitledBorder("Registro de Localidades y Parámetros"));
+        
+        panelInputs.add(new JLabel("Nombre:")); panelInputs.add(txtNombre);
+        panelInputs.add(new JLabel("Costo por Km ($):")); panelInputs.add(txtCostoKm);
+        
+        panelInputs.add(new JLabel("Provincia:")); panelInputs.add(txtProv);
+        panelInputs.add(new JLabel("% Aumento (>300km):")); panelInputs.add(txtPorcentaje);
+        
+        panelInputs.add(new JLabel("Latitud:")); panelInputs.add(txtLat);
+        panelInputs.add(new JLabel("Costo Fijo Provincias ($):")); panelInputs.add(txtCostoProv);
+        
+        panelInputs.add(new JLabel("Longitud:")); panelInputs.add(txtLon);
+        panelInputs.add(new JLabel("")); panelInputs.add(new JLabel("")); // Espaciadores
 
-        campoNombre = new JTextField(10);
-        campoProvincia = new JTextField(10);
-        campoLatitud = new JTextField(8);
-        campoLongitud = new JTextField(8);
+        JButton btnAdd = new JButton("Agregar Localidad");
+        JButton btnCalc = new JButton("Planificar Red");
 
+        JPanel panelBotones = new JPanel();
+        panelBotones.add(btnAdd); 
+        panelBotones.add(btnCalc);
 
-        JButton botonAgregar = new JButton("Agregar Localidad");
-        JButton botonCalcular = new JButton("Calcular");
+        JPanel panelSuperior = new JPanel(new BorderLayout());
+        panelSuperior.add(panelInputs, BorderLayout.CENTER);
+        panelSuperior.add(panelBotones, BorderLayout.SOUTH);
 
-        // Área de salida
-        areaSalida = new JTextArea(12, 40);
-        areaSalida.setEditable(false);
+        salida.setEditable(false);
+        add(panelSuperior, BorderLayout.NORTH);
+        add(new JScrollPane(salida), BorderLayout.CENTER);
 
+        btnAdd.addActionListener(e -> agregarLocalidad());
+        btnCalc.addActionListener(e -> calcular());
 
-        add(new JLabel("Nombre:"));
-        add(campoNombre);
-
-        add(new JLabel("Provincia:"));
-        add(campoProvincia);
-
-        add(new JLabel("Latitud:"));
-        add(campoLatitud);
-
-        add(new JLabel("Longitud:"));
-        add(campoLongitud);
-
-        add(botonAgregar);
-        add(botonCalcular);
-
-        add(new JScrollPane(areaSalida));
-
-        botonAgregar.addActionListener(e -> agregarLocalidad());
-        botonCalcular.addActionListener(e -> calcularAGM());
-
-        setVisible(true);
+        pack();
+        setLocationRelativeTo(null);
     }
 
     private void agregarLocalidad() {
         try {
-            String nombre = campoNombre.getText();
-            String provincia = campoProvincia.getText();
-            double lat = Double.parseDouble(campoLatitud.getText());
-            double lon = Double.parseDouble(campoLongitud.getText());
-
-            Localidad nueva = new Localidad(nombre, provincia, lat, lon);
-            localidades.add(nueva);
-
-            areaSalida.append("Agregada: " + nombre + "\n");
-
-
-            campoNombre.setText("");
-            campoProvincia.setText("");
-            campoLatitud.setText("");
-            campoLongitud.setText("");
-
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error en los datos");
+            Localidad l = new Localidad(txtNombre.getText().trim(), txtProv.getText().trim(),
+                    Double.parseDouble(txtLat.getText()), Double.parseDouble(txtLon.getText()));
+            localidades.add(l);
+            salida.append("Localidad registrada: " + l.getNombre() + " (" + l.getProvincia() + ")\n");
+            
+            txtNombre.setText(""); txtLat.setText(""); txtLon.setText("");
+            txtNombre.requestFocus();
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Latitud y longitud deben ser valores numéricos.");
         }
     }
 
-    private void calcularAGM() {
-
+    private void calcular() {
         if (localidades.size() < 2) {
-            JOptionPane.showMessageDialog(this, "Necesitás al menos 2 localidades");
+            JOptionPane.showMessageDialog(this, "Debe registrar al menos 2 localidades.");
             return;
         }
-
-        CalculadorDeCostos calc = new CalculadorDeCostos(10, 20, 5000);
-        ArrayList<Conexion> conexiones = new ArrayList<>();
-
-        // Generar conexiones
-        for (int i = 0; i < localidades.size(); i++) {
-            for (int j = i + 1; j < localidades.size(); j++) {
-
-                Localidad a = localidades.get(i);
-                Localidad b = localidades.get(j);
-
-                double costo = calc.calcularCosto(a, b);
-                conexiones.add(new Conexion(a, b, costo));
-            }
-        }
-
-        // Ordenar por costo
-        Collections.sort(conexiones);
-
         
-        ArrayList<Conexion> arbol = new ArrayList<>();
-        UnionFind uf = new UnionFind(localidades);
+        try {
+            double cKm = Double.parseDouble(txtCostoKm.getText());
+            double porc = Double.parseDouble(txtPorcentaje.getText());
+            double cProv = Double.parseDouble(txtCostoProv.getText());
 
-        for (Conexion c : conexiones) {
-            Localidad a = c.getOrigen();
-            Localidad b = c.getDestino();
+            CalculadorDeCostos calc = new CalculadorDeCostos(cKm, porc, cProv);
+            Planificador planificador = new Planificador(calc);
+            List<Conexion> resultado = planificador.calcularAGM(localidades);
 
-            if (uf.find(a) != uf.find(b)) {
-                arbol.add(c);
-                uf.union(a, b);
+            salida.setText("--- SOLUCIÓN DE RED ÓPTIMA ---\n");
+            double total = 0;
+            
+            for (Conexion con : resultado) {
+                salida.append(String.format("Conexión: %s <---> %s | Costo: $%.2f\n", 
+                    con.getOrigen().getNombre(), con.getDestino().getNombre(), con.getCosto()));
+                total += con.getCosto();
             }
+            salida.append("\nCOSTO TOTAL DE INSTALACIONES: $" + String.format("%.2f", total));
+
+            MapaApp mapa = new MapaApp();
+            mapa.setVisible(true);
+            mapa.mostrar(localidades, resultado);
+            
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Los parámetros de costo deben ser numéricos.");
         }
-
-        areaSalida.append("\n=== ARBOL GENERADOR MINIMO ===\n");
-
-        double total = 0;
-
-        for (Conexion c : arbol) {
-            areaSalida.append(
-                c.getOrigen().getNombre() + " - " +
-                c.getDestino().getNombre() +
-                " | $" + c.getCosto() + "\n"
-            );
-            total += c.getCosto();
-        }
-
-        areaSalida.append("Costo total: $" + total + "\n\n");
     }
 }
